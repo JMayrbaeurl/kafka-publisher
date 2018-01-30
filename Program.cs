@@ -14,6 +14,7 @@ namespace KafkaPublisher
     using Microsoft.Azure.Devices.Client.Transport.Mqtt;
     using Confluent.Kafka;
     using Confluent.Kafka.Serialization;
+    using CommandLine;
 
     class Program
     {
@@ -30,21 +31,32 @@ namespace KafkaPublisher
             if (!bypassCertVerification && IsIotEdgeModule) 
                 InstallCert();
 
-            string connectionString = GetHubConnectionString();
-            if (string.IsNullOrEmpty(connectionString))
-                throw new InvalidOperationException("No IoT Hub connection string configured");
-            DeviceClient deviceClient = await Init(connectionString, bypassCertVerification);
+            var result = CommandLine.Parser.Default.ParseArguments<Options>(args);
+            Parsed<Options> parsed = result as Parsed<Options>;
+            if (parsed != null) 
+            {
+                Options options = parsed.Value;
+                string connectionString = GetHubConnectionString();
+                if (string.IsNullOrEmpty(connectionString))
+                    throw new InvalidOperationException("No IoT Hub connection string configured");
+                DeviceClient deviceClient = await Init(connectionString, bypassCertVerification);
 
-            var cts = new CancellationTokenSource();
-            void OnUnload(AssemblyLoadContext ctx) => CancelProgram(cts);
-            AssemblyLoadContext.Default.Unloading += OnUnload;
-            Console.CancelKeyPress += (sender, cpe) => { CancelProgram(cts); };
+                var cts = new CancellationTokenSource();
+                void OnUnload(AssemblyLoadContext ctx) => CancelProgram(cts);
+                AssemblyLoadContext.Default.Unloading += OnUnload;
+                Console.CancelKeyPress += (sender, cpe) => { CancelProgram(cts); };
 
-            string brokerList = args[0];
-            var topics = args.Skip(1).ToList();
-            await ConsumeKafkaMessages(deviceClient, brokerList, topics, cts);
+                string brokerList = args[0];
+                var topics = args.Skip(1).ToList();
+                await ConsumeKafkaMessages(deviceClient, brokerList, topics, cts);
 
-            return 0;
+                return 0;
+            } else 
+            {
+                NotParsed<Options> notparsed = result as NotParsed<Options>;
+                //notparsed.Errors;
+                return -1;
+            }
         }
 
         private static void DetectEnvironment()
