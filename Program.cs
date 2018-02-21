@@ -15,6 +15,7 @@ namespace KafkaPublisher
     using Confluent.Kafka;
     using Confluent.Kafka.Serialization;
     using CommandLine;
+    using Newtonsoft.Json;
 
     class Program
     {
@@ -198,9 +199,11 @@ namespace KafkaPublisher
         {
             var config = new Dictionary<string, object>
             {
-                { "bootstrap.servers", options.BrokerList }, 
                 { "api.version.request", options.DoAPIVersionRequest }
             };
+
+            if (!String.IsNullOrEmpty(options.BrokerList))
+                config.Add("bootstrap.servers", options.BrokerList);
 
             if (!String.IsNullOrEmpty(options.Consumergroup))
                 config.Add("group.id", options.Consumergroup);
@@ -221,6 +224,21 @@ namespace KafkaPublisher
 
             if (!String.IsNullOrEmpty(options.SslCaLocation))
                 config.Add("ssl.ca.location", options.SslCaLocation);
+
+            if (!String.IsNullOrEmpty(options.ConfigFilePath)) 
+            {
+                string configsInFile = File.ReadAllText(options.ConfigFilePath);
+                if (!String.IsNullOrEmpty(configsInFile))
+                {
+                    Dictionary<string, string> values = JsonConvert.DeserializeObject<Dictionary<string, string>>(configsInFile);
+                    if (values != null && values.Count > 0) {
+                        foreach(KeyValuePair<string, string> entry in values) 
+                        {
+                            config.Add(entry.Key, entry.Value);
+                        }
+                    }
+                }
+            }
 
             return config;
         }

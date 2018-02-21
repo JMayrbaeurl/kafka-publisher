@@ -36,5 +36,8 @@ namespace KafkaPublisher
 
         [Option('f', "flatten", Default = false)]
         public bool Flatten { get; set; }
+
+        [Option('x', "configFile")]
+        public string ConfigFilePath { get; set; }
     }
 }
