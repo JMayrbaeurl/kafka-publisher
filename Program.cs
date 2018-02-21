@@ -20,6 +20,8 @@ namespace KafkaPublisher
     {
         public static bool IsIotEdgeModule = false;
         
+        private static DeviceClient deviceClient;
+
         public static int Main(string[] args) => MainAsync(args).Result;
 
         static async Task<int> MainAsync(string[] args)
@@ -39,16 +41,14 @@ namespace KafkaPublisher
                 string connectionString = GetHubConnectionString();
                 if (string.IsNullOrEmpty(connectionString))
                     throw new InvalidOperationException("No IoT Hub connection string configured");
-                DeviceClient deviceClient = await Init(connectionString, bypassCertVerification);
+                deviceClient = await Init(connectionString, bypassCertVerification);
 
                 var cts = new CancellationTokenSource();
                 void OnUnload(AssemblyLoadContext ctx) => CancelProgram(cts);
                 AssemblyLoadContext.Default.Unloading += OnUnload;
                 Console.CancelKeyPress += (sender, cpe) => { CancelProgram(cts); };
 
-                string brokerList = args[0];
-                var topics = args.Skip(1).ToList();
-                await ConsumeKafkaMessages(deviceClient, brokerList, topics, cts);
+                ConsumeKafkaMessages(deviceClient, options, cts);
 
                 return 0;
             } else 
@@ -116,7 +116,6 @@ namespace KafkaPublisher
             store.Close();
         }
 
-
         /// <summary>
         /// Initializes the DeviceClient and sets up the callback to receive
         /// messages containing temperature information
@@ -141,46 +140,100 @@ namespace KafkaPublisher
             return ioTHubModuleClient;
         }
 
-        static async Task ConsumeKafkaMessages(DeviceClient deviceClient, string brokerList, IEnumerable<string> topics,
+        static void ConsumeKafkaMessages(DeviceClient deviceClient, Options options,
             CancellationTokenSource cts) {
 
-            var config = new Dictionary<string, object>
-            {
-                { "group.id", "azure-iotedge-consumer" },
-                { "bootstrap.servers", brokerList }
-            };
+            var config = CreateKafkaConfigurationFromConfig(options);
 
             using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topics.First(), 0, 0) });
+                consumer.Subscribe(options.Topics);
+                InstallErrorHandlingForConsumer(consumer);
+                InstallPartitionHandling(consumer);
 
-                // Raised on critical errors, e.g. connection failures or all brokers down.
-                consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error}");
+                consumer.OnMessage += async (_, msg) =>
+                {
+                    IList<Microsoft.Azure.Devices.Client.Message> iothubMessages = new List<Microsoft.Azure.Devices.Client.Message>();
+                    if (options.Flatten)
+                    {
+                        // Future extension
+                        iothubMessages.Add(new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(msg.Value)));
+                    } else
+                        iothubMessages.Add(new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(msg.Value)));
 
-                // Raised on deserialization errors or when a consumed message has an error != NoError.
-                consumer.OnConsumeError += (_, error)
-                    => Console.WriteLine($"Consume error: {error}");
+                    foreach(Microsoft.Azure.Devices.Client.Message singleMessage in iothubMessages)
+                    {
+                        Console.WriteLine($"\t{DateTime.Now.ToLocalTime()}> Sending kafka message to Azure IoT Hub");
+
+                        if(IsIotEdgeModule)
+                            await deviceClient.SendEventAsync("output1", singleMessage);
+                        else
+                            await deviceClient.SendEventAsync(singleMessage);
+                    }
+                };
 
                 while (!cts.Token.IsCancellationRequested)
                 {
-                    Message<Ignore, string> msg;
-
-                    if (consumer.Consume(out msg, TimeSpan.FromSeconds(1)))
-                    {
-                        Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
-
-                        //string dataBuffer = JsonConvert.SerializeObject(tempData);
-                        var eventMessage = new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(msg.Value));
-                        Console.WriteLine($"\t{DateTime.Now.ToLocalTime()}> Sending kafka message");
-
-                        if(IsIotEdgeModule)
-                            await deviceClient.SendEventAsync("output1", eventMessage);
-                        else
-                            await deviceClient.SendEventAsync(eventMessage);
-                    }
+                    consumer.Poll(TimeSpan.FromMilliseconds(options.Samplingrate));
                 }
             }
+        }
+
+        private static void InstallPartitionHandling(Consumer<Ignore, string> consumer)
+        {
+            consumer.OnPartitionsAssigned += (_, partitions) =>
+            {
+                Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
+                consumer.Assign(partitions);
+            };
+
+            consumer.OnPartitionsRevoked += (_, partitions) =>
+            {
+                Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
+                consumer.Unassign();
+            };
+        }
+
+        private static Dictionary<string, object> CreateKafkaConfigurationFromConfig(Options options) 
+        {
+            var config = new Dictionary<string, object>
+            {
+                { "bootstrap.servers", options.BrokerList }, 
+                { "api.version.request", options.DoAPIVersionRequest }
+            };
+
+            if (!String.IsNullOrEmpty(options.Consumergroup))
+                config.Add("group.id", options.Consumergroup);
+            else
+                config.Add("group.id", "azure-iotedge-publisher");
+
+            if (!String.IsNullOrEmpty(options.Securityprotocol))
+                config.Add("security.protocol", options.Securityprotocol);
+
+            if (!String.IsNullOrEmpty(options.SaslMechanism))
+                config.Add("sasl.mechanisms", options.SaslMechanism);
+
+            if (!String.IsNullOrEmpty(options.Username))
+                config.Add("sasl.username", options.Username);
+
+            if (!String.IsNullOrEmpty(options.Password))
+                config.Add("sasl.password", options.Password);
+
+            if (!String.IsNullOrEmpty(options.SslCaLocation))
+                config.Add("ssl.ca.location", options.SslCaLocation);
+
+            return config;
+        }
+
+        static void InstallErrorHandlingForConsumer(Consumer<Ignore, string> consumer) 
+        {
+            // Raised on critical errors, e.g. connection failures or all brokers down.
+            consumer.OnError += (_, error)
+                => Console.WriteLine($"Error: {error}");
+
+            // Raised on deserialization errors or when a consumed message has an error != NoError.
+            consumer.OnConsumeError += (_, error)
+                => Console.WriteLine($"Consume error: {error}");
         }
     }
 }
