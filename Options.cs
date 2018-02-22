@@ -42,5 +42,11 @@ namespace KafkaPublisher
 
         [Option("iothubprotocol", Default = "Mqtt_Tcp_Only", HelpText = "the protocol to use for communication with Azure IoT Hub")]
         public string IoTHubProtocol { get; set; }
+
+        [Option("session.timeout.ms", Default = 30000)]
+        public int SessionTimeout { get; set; }
+
+        [Option("max.poll.records")]
+        public int? MaxPollRecords { get; set;}
     }
 }

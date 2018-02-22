@@ -227,6 +227,11 @@ namespace KafkaPublisher
             if (!String.IsNullOrEmpty(options.SslCaLocation))
                 config.Add("ssl.ca.location", options.SslCaLocation);
 
+            config.Add("session.timeout.ms", options.SessionTimeout);    
+
+            if (options.MaxPollRecords != null)
+                config.Add("max.poll.records", options.MaxPollRecords);
+
             if (!String.IsNullOrEmpty(options.ConfigFilePath)) 
             {
                 string configsInFile = File.ReadAllText(options.ConfigFilePath);
