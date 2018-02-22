@@ -5,21 +5,32 @@
    "version": "0.2.0",
    "configurations": [
         {
-            "name": ".NET Core Launch (console)",
+            "name": ".NET Core BCX18",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/bin/Debug/netcoreapp2.0/KafkaPublisher.dll",
-            "args": [ "--brokerlist=localhost:29092", "--topics=foo"],
+            "args": [ "--topics=Packaging_Simulator", "--api.version.request=true", "--configFile=C:\\Dev\\iotedge\\kafka\\bcx18KafkaConfig.json"],
             "cwd": "${workspaceFolder}",
             // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
             "console": "internalConsole",
             "stopAtEntry": false,
             "internalConsoleOptions": "openOnSessionStart",
-            "env": {
-                "_HUB_CS" : ""
-            }
+        },
+        {
+            "name": ".NET Core Cloudkafka",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/bin/Debug/netcoreapp2.0/KafkaPublisher.dll",
+            "args": [ "--topics=i31lpvwu-foo", "--api.version.request=true", "--configFile=C:\\Dev\\iotedge\\kafka\\CloudKafkaConfig.json"],
+            "cwd": "${workspaceFolder}",
+            // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
+            "console": "internalConsole",
+            "stopAtEntry": false,
+            "internalConsoleOptions": "openOnSessionStart",
         },
         {
             "name": ".NET Core Attach",

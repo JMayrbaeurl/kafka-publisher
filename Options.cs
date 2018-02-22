@@ -4,7 +4,7 @@ using CommandLine;
 namespace KafkaPublisher
 {
     class Options {
-        [Option('b', "brokerlist", Required = true, HelpText = "bootstrap.servers: A list of host/port pairs to use for establishing the initial connection to the Kafka cluster. The client will make use of all servers irrespective of which servers are specified here for bootstrapping—this list only impacts the initial hosts used to discover the full set of servers. This list should be in the form host1:port1,host2:port2,.... Since these servers are just used for the initial connection to discover the full cluster membership (which may change dynamically), this list need not contain the full set of servers (you may want more than one, though, in case a server is down).")]
+        [Option('b', "brokerlist", HelpText = "bootstrap.servers: A list of host/port pairs to use for establishing the initial connection to the Kafka cluster. The client will make use of all servers irrespective of which servers are specified here for bootstrapping—this list only impacts the initial hosts used to discover the full set of servers. This list should be in the form host1:port1,host2:port2,.... Since these servers are just used for the initial connection to discover the full cluster membership (which may change dynamically), this list need not contain the full set of servers (you may want more than one, though, in case a server is down).")]
         public string BrokerList  { get; set; }
 
         [Option('t', "topics", Required = true, HelpText = "Topics to subscribe to")]
@@ -39,5 +39,8 @@ namespace KafkaPublisher
 
         [Option('x', "configFile")]
         public string ConfigFilePath { get; set; }
+
+        [Option("iothubprotocol", Default = "Mqtt_Tcp_Only", HelpText = "the protocol to use for communication with Azure IoT Hub")]
+        public string IoTHubProtocol { get; set; }
     }
 }

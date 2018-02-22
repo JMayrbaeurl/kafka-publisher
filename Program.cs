@@ -42,7 +42,7 @@ namespace KafkaPublisher
                 string connectionString = GetHubConnectionString();
                 if (string.IsNullOrEmpty(connectionString))
                     throw new InvalidOperationException("No IoT Hub connection string configured");
-                deviceClient = await Init(connectionString, bypassCertVerification);
+                deviceClient = await Init(connectionString, options, bypassCertVerification);
 
                 var cts = new CancellationTokenSource();
                 void OnUnload(AssemblyLoadContext ctx) => CancelProgram(cts);
@@ -80,7 +80,7 @@ namespace KafkaPublisher
                 connectionString = Environment.GetEnvironmentVariable("EdgeHubConnectionString");
             } else {
                 Console.WriteLine("IoT Hub connection string read from environment.");
-                connectionString = Environment.GetEnvironmentVariable("_HUB_CS");
+                connectionString = Environment.GetEnvironmentVariable("KAFKAPUB_HUB_CS");
             }
 
             return connectionString;
@@ -121,11 +121,14 @@ namespace KafkaPublisher
         /// Initializes the DeviceClient and sets up the callback to receive
         /// messages containing temperature information
         /// </summary>
-        static async Task<DeviceClient> Init(string connectionString, bool bypassCertVerification = false)
+        static async Task<DeviceClient> Init(string connectionString, Options options, bool bypassCertVerification = false)
         {
             Console.WriteLine("Connection String {0}", connectionString);
 
-            MqttTransportSettings mqttSetting = new MqttTransportSettings(TransportType.Mqtt_Tcp_Only);
+            TransportType transportProtocol = TransportType.Mqtt_Tcp_Only;
+            if(!String.IsNullOrEmpty(options.IoTHubProtocol))
+                transportProtocol = (TransportType)Enum.Parse(typeof(TransportType), options.IoTHubProtocol);
+            MqttTransportSettings mqttSetting = new MqttTransportSettings(transportProtocol);
             // During dev you might want to bypass the cert verification. It is highly recommended to verify certs systematically in production
             if (bypassCertVerification)
             {
@@ -150,7 +153,6 @@ namespace KafkaPublisher
             {
                 consumer.Subscribe(options.Topics);
                 InstallErrorHandlingForConsumer(consumer);
-                InstallPartitionHandling(consumer);
 
                 consumer.OnMessage += async (_, msg) =>
                 {
