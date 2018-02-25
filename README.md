@@ -10,9 +10,69 @@ Telemetry data, sent by a Bosch Packaging simulator, was gathered by an Bosch Io
 ## Configuration
 Configuration consists of two parts. First part is for the Kafka cluster, the source of the telemetry data, and second is for the Azure IoT Hub, the sink or the target of the telemetry data publishing. 
 
-### Kafka cluster configuration
+Except for the Azure IoT Hub connection string all configuration parameters can be set by using the following command line arguments:
 
-### Azure IoT Hub configuration
+  -b, --brokerlist             bootstrap.servers: A list of host/port pairs to 
+                               use for establishing the initial connection to 
+                               the Kafka cluster. The client will make use of 
+                               all servers irrespective of which servers are 
+                               specified here for bootstrapping—this list only 
+                               impacts the initial hosts used to discover the 
+                               full set of servers. This list should be in the 
+                               form host1:port1,host2:port2,.... Since these 
+                               servers are just used for the initial connection
+                               to discover the full cluster membership (which 
+                               may change dynamically), this list need not 
+                               contain the full set of servers (you may want 
+                               more than one, though, in case a server is down).
+
+  -t, --topics                 Required. Kafka cluster topics to subscribe to
+
+  -c, --consumergroup          Aka group.id: A unique string that 
+                               identifies the consumer group this consumer 
+                               belongs to. This property is required if the 
+                               consumer uses either the group management 
+                               functionality by using subscribe(topic) or the 
+                               Kafka-based offset management strategy.
+
+  -s, --security.protocol      Protocol used to communicate with brokers. Valid
+                               values are: PLAINTEXT, SSL, SASL_PLAINTEXT, 
+                               SASL_SSL.
+                               r-version-compatibility
+
+  -m, --samplingrate           (Default: 1000) Sampling rate in milliseconds 
+                               used to poll messages from Kafka broker
+
+  -f, --flatten                (Default: false) 
+
+  -x, --configFile             Configuration file location for additional Kafka
+                               consumer configuration parameters. Must be 
+                               stored as key value pairs in a json file
+
+  --iothubprotocol             (Default: Mqtt_Tcp_Only) the protocol to use for
+                               communication with Azure IoT Hub
+
+  --session.timeout.ms         (Default: 30000) The timeout used to detect 
+                               consumer failures when using Kafka's group 
+                               management facility. The consumer sends periodic
+                               heartbeats to indicate its liveness to the 
+                               broker. If no heartbeats are received by the 
+                               broker before the expiration of this session 
+                               timeout, then the broker will remove this 
+                               consumer from the group and initiate a 
+                               rebalance. Note that the value must be in the 
+                               allowable range as configured in the broker 
+                               configuration by group.min.session.timeout.ms 
+                               and group.max.session.timeout.ms.
+
+  --max.poll.records           (Default: 100) The maximum number of records 
+                               returned in a single call to poll().
+
+  --help                       Display this help screen.
+
+  --version                    Display version information.
+
+The Azure IoT Hub connection string can be set by using the environment variable KAFKAPUB_HUB_CS.
 
 ## Run as .NET Core console application
 
