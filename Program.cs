@@ -229,8 +229,10 @@ namespace KafkaPublisher
 
             config.Add("session.timeout.ms", options.SessionTimeout);    
 
+            /*
             if (options.MaxPollRecords != null)
                 config.Add("max.poll.records", options.MaxPollRecords);
+            */
 
             if (!String.IsNullOrEmpty(options.ConfigFilePath)) 
             {

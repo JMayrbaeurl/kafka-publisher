@@ -65,8 +65,6 @@ Except for the Azure IoT Hub connection string all configuration parameters can 
                                configuration by group.min.session.timeout.ms 
                                and group.max.session.timeout.ms.
 
-  --max.poll.records           (Default: 100) The maximum number of records 
-                               returned in a single call to poll().
 
   --help                       Display this help screen.
 
@@ -76,6 +74,34 @@ The Azure IoT Hub connection string can be set by using the environment variable
 
 ## Run as .NET Core console application
 
+You can run Kafka IoT Hub publisher using systems with installed .NET Core runtime:
+```powershell
+dotnet KafkaPublisher.dll --topics=i31lpvwu-foo --api.version.request=true --configFile=/config/CloudKafkaConfig.json
+```
+with the configuration file 'CloudKafkaConfig.json':
+```json
+{
+	"bootstrap.servers" : "[Your Kafka cluster endpoint]]",
+	"security.protocol" : "SASL_SSL",
+	"sasl.mechanisms" : "SCRAM-SHA-256",
+	"sasl.username" : "[Your username]]",
+	"sasl.password" : "[Your password]",
+	"ssl.ca.location" : "C:\\Dev\\iotedge\\kafka\\cloudkarafka\\ssl\\ca_cert.pem"
+}
+```
+
 ## Run as Docker container
 
+You can run Kafka IoT Hub publisher as docker container. A sample configuration for Windows looks like (see runOnDocker_Windows.ps1 Powershell script in scripts folder):
+```powershell
+docker run -d `
+    --name kafka-iot-publisher `
+    -v C:\Dev\iotedge\kafka:/config `
+    --env KAFKAPUB_HUB_CS=$env:KAFKAPUB_HUB_CS `
+    kafka-iothub-publisher:latest `
+    dotnet KafkaPublisher.dll --topics=i31lpvwu-foo --api.version.request=true --configFile=/config/CloudKafkaConfig_Docker.json
+```
+
 ## Run as Azure IoT Edge module
+
+TBD

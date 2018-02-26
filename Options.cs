@@ -46,7 +46,9 @@ namespace KafkaPublisher
         [Option("session.timeout.ms", Default = 30000, HelpText = "The timeout used to detect consumer failures when using Kafka's group management facility. The consumer sends periodic heartbeats to indicate its liveness to the broker. If no heartbeats are received by the broker before the expiration of this session timeout, then the broker will remove this consumer from the group and initiate a rebalance. Note that the value must be in the allowable range as configured in the broker configuration by group.min.session.timeout.ms and group.max.session.timeout.ms.")]
         public int SessionTimeout { get; set; }
 
+/* Only supported by Java consumers 
         [Option("max.poll.records", Default = 100, HelpText = "The maximum number of records returned in a single call to poll().")]
         public int? MaxPollRecords { get; set;}
+*/
     }
 }
