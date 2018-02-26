@@ -7,6 +7,8 @@ Originally this sample was developed at the [Manufacturing Hack Challenge](http:
 
 Telemetry data, sent by a Bosch Packaging simulator, was gathered by an Bosch IoT gateway and pushed to an Apache Kafka server that was running in the 'Fog' layer of the installation. The message payload data format used for the telemetry data was the [Production Performance Management Protocol](https://www.eclipse.org/unide/specification/), that is part of the [Eclipse Unide project](https://www.eclipse.org/unide/).
 
+
+
 ## Configuration
 Configuration consists of two parts. First part is for the Kafka cluster, the source of the telemetry data, and second is for the Azure IoT Hub, the sink or the target of the telemetry data publishing. 
 
@@ -72,6 +74,8 @@ Except for the Azure IoT Hub connection string all configuration parameters can 
 
 The Azure IoT Hub connection string can be set by using the environment variable KAFKAPUB_HUB_CS.
 
+This software was tested using a local Kafka cluster with one node and with a Cloud version provided by [CloudKarafka](https://www.cloudkarafka.com/)
+
 ## Run as .NET Core console application
 
 You can run Kafka IoT Hub publisher using systems with installed .NET Core runtime:
@@ -92,7 +96,7 @@ with the configuration file 'CloudKafkaConfig.json':
 
 ## Run as Docker container
 
-You can run Kafka IoT Hub publisher as docker container. A sample configuration for Windows looks like (see runOnDocker_Windows.ps1 Powershell script in scripts folder):
+You can run Kafka IoT Hub publisher as docker container. You can build the Docker image on your own or use the prebuilt one from [DockerHub](https://hub.docker.com/r/jmayrbaeurl/kafka-iothub-publisher/). A sample configuration for Windows looks like (see runOnDocker_Windows.ps1 Powershell script in scripts folder):
 ```powershell
 docker run -d `
     --name kafka-iot-publisher `
